@@ -1,0 +1,186 @@
+/*
+ * Scripta Design Tokens & Room Themes
+ * 
+ * Scripta uses three distinct color spaces to visually reinforce the cognitive
+ * shift required in each room:
+ * 1. Sandbox: Deep Midnight Navy & Warm Cream — zero eye strain, night-owl drafting atmosphere.
+ * 2. Cutting Room: Warm Scholarly Cream & Corkboard Tones — analytical index-card layout.
+ * 3. Sculptor: Pristine Published White & Deep Slate — classic, published manuscript feel.
+ */
+
+/* Custom Marginalia Typography Package */
+@font-face {
+  font-family: 'Marginalia Mono';
+  src: url('../scripta-font-marginalia/woff2/Marginalia-Mono-Regular.woff2') format('woff2'),
+       url('../scripta-font-marginalia/ttf/Marginalia-Mono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Marginalia Mono';
+  src: url('../scripta-font-marginalia/woff2/Marginalia-Mono-Medium.woff2') format('woff2'),
+       url('../scripta-font-marginalia/ttf/Marginalia-Mono-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Marginalia Serif';
+  src: url('../scripta-font-marginalia/woff2/Marginalia-Serif-Regular.woff2') format('woff2'),
+       url('../scripta-font-marginalia/ttf/Marginalia-Serif-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Marginalia Serif';
+  src: url('../scripta-font-marginalia/woff2/Marginalia-Serif-Italic.woff2') format('woff2'),
+       url('../scripta-font-marginalia/ttf/Marginalia-Serif-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Marginalia Serif';
+  src: url('../scripta-font-marginalia/woff2/Marginalia-Serif-Medium.woff2') format('woff2'),
+       url('../scripta-font-marginalia/ttf/Marginalia-Serif-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fallback Web Fonts */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Common UI & Layout Tokens */
+  --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-base: 18px;
+  --header-height: 56px;
+  --max-content-width: 780px;
+
+  /* Smooth 60fps Room Transition Tokens */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-room: background-color 0.6s var(--ease-smooth), color 0.6s var(--ease-smooth), border-color 0.6s var(--ease-smooth);
+  --transition-fast: all 0.18s var(--ease-smooth);
+  --transition-normal: all 0.28s var(--ease-spring);
+
+  /* Font Family Definitions */
+  --font-sandbox: 'Marginalia Mono', 'IBM Plex Mono', monospace;
+  --font-cutting: 'Marginalia Serif', 'Source Serif 4', Georgia, serif;
+  --font-sculptor: 'Marginalia Serif', 'Lora', Georgia, serif;
+  --font-body: var(--font-sandbox);
+
+  /* Sound / Inactivity Feedback Constants */
+  --pulse-speed: 1.6s;
+}
+
+/* Dyslexia-Friendly Font Mode */
+body.dyslexia-font {
+  --font-sandbox: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  --font-cutting: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  --font-sculptor: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+}
+
+/* High Contrast Mode */
+body.high-contrast {
+  filter: contrast(1.3) saturate(1.1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM 0: THE THRESHOLD THEME                                                */
+/* -------------------------------------------------------------------------- */
+body[data-room="threshold"] {
+  --bg-room: #10121d;
+  --bg-surface: #171a2a;
+  --bg-surface-hover: #1e2238;
+  --bg-input: #0b0d16;
+  --text-primary: #f5f0e8;
+  --text-muted: rgba(245, 240, 232, 0.65);
+  --text-faded: rgba(245, 240, 232, 0.25);
+  --accent-color: #f05454;
+  --accent-hover: #ff6b6b;
+  --accent-soft: rgba(240, 84, 84, 0.15);
+  --border-color: rgba(255, 255, 255, 0.09);
+  --border-hover: rgba(255, 255, 255, 0.2);
+  --shadow-room: 0 12px 36px rgba(0, 0, 0, 0.45);
+  --font-body: var(--font-sculptor);
+  background-color: var(--bg-room);
+  color: var(--text-primary);
+  transition: var(--transition-room);
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM 1: THE SANDBOX THEME (Dark Midnight Navy & Warm Cream)               */
+/* -------------------------------------------------------------------------- */
+body[data-room="sandbox"] {
+  --bg-room: #121524;
+  --bg-surface: #1a1e33;
+  --bg-surface-hover: #222742;
+  --bg-input: #0c0e18;
+  --text-primary: #f8eee0; /* Warm soft cream */
+  --text-muted: rgba(248, 238, 224, 0.55);
+  --text-faded: rgba(248, 238, 224, 0.16);
+  --accent-color: #e94560; /* Warm red glow */
+  --accent-hover: #ff5773;
+  --accent-soft: rgba(233, 69, 96, 0.16);
+  --border-color: rgba(248, 238, 224, 0.1);
+  --border-hover: rgba(248, 238, 224, 0.22);
+  --shadow-room: 0 14px 40px rgba(0, 0, 0, 0.5);
+  --font-body: var(--font-sandbox);
+  background-color: var(--bg-room);
+  color: var(--text-primary);
+  transition: var(--transition-room);
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM 2: THE CUTTING ROOM THEME (Scholarly Warm Paper & Leather)           */
+/* -------------------------------------------------------------------------- */
+body[data-room="cutting"] {
+  --bg-room: #f4efe6; /* Soft warm textured paper */
+  --bg-surface: #ffffff; /* Crisp white index card */
+  --bg-surface-hover: #fdfaf6;
+  --bg-input: #eae4d8;
+  --text-primary: #272522; /* Deep warm ink */
+  --text-muted: #736c64;
+  --text-faded: #ab9f93;
+  --accent-color: #8c5836; /* Warm saddle leather */
+  --accent-hover: #a36942;
+  --accent-soft: rgba(140, 88, 54, 0.12);
+  --border-color: #dfd6c8;
+  --border-hover: #c7bcab;
+  --shadow-room: 0 6px 20px rgba(100, 70, 40, 0.08);
+  --font-body: var(--font-cutting);
+  background-color: var(--bg-room);
+  color: var(--text-primary);
+  transition: var(--transition-room);
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM 3: THE SCULPTOR THEME (Pure Published White & Forest Slate)          */
+/* -------------------------------------------------------------------------- */
+body[data-room="sculptor"] {
+  --bg-room: #f9f9fa; /* Classic published book page */
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f4f6f5;
+  --bg-input: #edf1ee;
+  --text-primary: #18191a; /* Pure carbon black */
+  --text-muted: #64686c;
+  --text-faded: #9b9fa4;
+  --accent-color: #245c43; /* Deep scholarly forest green */
+  --accent-hover: #2e7354;
+  --accent-soft: rgba(36, 92, 67, 0.12);
+  --border-color: #e2e4e6;
+  --border-hover: #c8cbd0;
+  --shadow-room: 0 4px 18px rgba(0, 0, 0, 0.06);
+  --font-body: var(--font-sculptor);
+  background-color: var(--bg-room);
+  color: var(--text-primary);
+  transition: var(--transition-room);
+}

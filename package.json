@@ -1,0 +1,31 @@
+{
+  "name": "scripta",
+  "version": "1.0.0",
+  "description": "The local-first cognitive spatial writing space separating generation, structure, and language refinement.",
+  "author": "Eldrex Delos Reyes Bula <eldrexdelosreyesbula@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EldrexDelosReyesBula/scripta.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EldrexDelosReyesBula/scripta/issues"
+  },
+  "homepage": "https://github.com/EldrexDelosReyesBula/scripta#readme",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.475.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.1.0"
+  }
+}

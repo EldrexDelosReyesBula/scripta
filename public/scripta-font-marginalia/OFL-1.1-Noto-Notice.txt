@@ -1,0 +1,3 @@
+Marginalia is a derivative build using Noto Sans Mono and Noto Serif as its base.
+Noto is licensed under the SIL Open Font License, Version 1.1.
+See https://openfontlicense.org/ for the full license text.

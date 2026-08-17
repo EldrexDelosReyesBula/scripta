@@ -1,0 +1,540 @@
+/*
+ * Scripta Room-Specific Styles
+ * Implements the spatial visuals for Sandbox, Cutting Room, and Sculptor.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* CONTAINER LAYOUT & ROOM ENTRY ANIMATION                                    */
+/* -------------------------------------------------------------------------- */
+.room-container {
+  display: none;
+  min-height: 100vh;
+  padding-top: calc(var(--header-height) + 28px);
+  padding-bottom: 80px;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.room-container.active-room {
+  display: block;
+  animation: roomEnter 0.45s var(--ease-spring) forwards;
+}
+
+@keyframes roomEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM 0: THE THRESHOLD                                                      */
+/* -------------------------------------------------------------------------- */
+#room-threshold {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding-top: 0;
+  text-align: center;
+}
+
+.threshold-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 620px;
+}
+
+.threshold-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-color);
+  margin-bottom: 20px;
+}
+
+.threshold-question {
+  font-family: var(--font-sculptor);
+  font-size: 2.2rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 28px;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.threshold-input-wrapper {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.threshold-input {
+  font-size: 1.15rem;
+  text-align: center;
+  padding: 16px 24px;
+  border-radius: 30px;
+  border: 2px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: all 0.24s var(--ease-spring);
+}
+
+.threshold-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35), 0 0 0 3px var(--accent-soft);
+  transform: translateY(-2px);
+}
+
+.warmup-prompt-box {
+  margin-top: 28px;
+  padding: 14px 20px;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-style: italic;
+  color: var(--text-muted);
+  width: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.22s var(--ease-smooth);
+}
+
+.warmup-prompt-box:hover {
+  border-color: var(--accent-color);
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+  transform: translateY(-1px);
+}
+
+.warmup-prompt-box svg {
+  color: var(--accent-color);
+  flex-shrink: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM ONE: THE SANDBOX (Drafting & Fading Lines)                           */
+/* -------------------------------------------------------------------------- */
+.sandbox-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.circular-timer-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.circular-timer-svg {
+  width: 38px;
+  height: 38px;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 2px 6px var(--accent-soft));
+}
+
+.timer-bg-circle {
+  fill: none;
+  stroke: var(--border-color);
+  stroke-width: 3.5;
+}
+
+.timer-progress-circle {
+  fill: none;
+  stroke: var(--accent-color);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.circular-timer-container.pulse-warning {
+  animation: timerPulse 1.4s infinite alternate ease-in-out;
+}
+
+@keyframes timerPulse {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.08); opacity: 0.65; }
+}
+
+.timer-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.timer-label {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.timer-sub {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.sandbox-editor {
+  min-height: 520px;
+  font-family: var(--font-sandbox);
+  font-size: var(--font-size-base);
+  line-height: 1.85;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+  cursor: text;
+}
+
+.sandbox-line {
+  transition: opacity 0.5s ease, color 0.5s ease;
+  min-height: 1.85em;
+}
+
+.sandbox-line.current-line {
+  opacity: 1.0;
+  color: var(--text-primary);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.sandbox-line.recent-line {
+  opacity: 0.42;
+}
+
+.sandbox-line.faded-line {
+  opacity: 0.16;
+}
+
+body.sandbox-dimmed #room-sandbox {
+  filter: brightness(0.65);
+  transition: filter 2.5s ease;
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM TWO: THE CUTTING ROOM (Card Organization)                            */
+/* -------------------------------------------------------------------------- */
+.cutting-room-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.room-heading {
+  font-family: var(--font-cutting);
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.room-subtext {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.cutting-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.label-progress-badge {
+  padding: 6px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cutting-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: var(--shadow-room);
+  cursor: grab;
+  position: relative;
+  transition: transform 0.22s var(--ease-spring), box-shadow 0.22s var(--ease-spring), opacity 0.2s ease;
+  user-select: none;
+}
+
+.cutting-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+}
+
+.cutting-card.dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+  cursor: grabbing;
+  border: 2px dashed var(--accent-color);
+}
+
+.cutting-card.drag-over {
+  border-top: 3px solid var(--accent-color);
+}
+
+.cutting-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.card-drag-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+}
+
+.card-label-input {
+  flex: 1;
+  font-family: var(--font-cutting);
+  font-size: 0.88rem;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.card-label-input:focus {
+  border-color: var(--accent-color);
+}
+
+.card-tag-select {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-body-text {
+  font-family: var(--font-cutting);
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* ROOM THREE: THE SCULPTOR (Refinement & Hemingway Highlighting)            */
+/* -------------------------------------------------------------------------- */
+.sculptor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 30px;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.sculptor-tools-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sculptor-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-pill {
+  font-family: var(--font-sandbox);
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  color: var(--text-muted);
+}
+
+.sculptor-editor-wrapper {
+  position: relative;
+  margin-left: 0;
+}
+
+.sculptor-editor {
+  min-height: 540px;
+  font-family: var(--font-sculptor);
+  font-size: var(--font-size-base);
+  line-height: 1.9;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.sculptor-paragraph {
+  position: relative;
+  margin-bottom: 26px;
+}
+
+/* Subheading sticky label in margin (Desktop $\ge$ 1100px) */
+.sculptor-margin-label {
+  position: absolute;
+  left: -200px;
+  top: 0;
+  width: 175px;
+  font-size: 0.76rem;
+  font-family: var(--font-cutting);
+  font-style: italic;
+  color: var(--accent-color);
+  text-align: right;
+  pointer-events: none;
+  font-weight: 500;
+  line-height: 1.4;
+  opacity: 0.85;
+}
+
+@media (max-width: 1150px) {
+  .sculptor-margin-label {
+    position: static;
+    display: inline-block;
+    width: auto;
+    text-align: left;
+    margin-bottom: 6px;
+    padding: 2px 8px;
+    background: var(--accent-soft);
+    border-radius: 4px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* HEMINGWAY MODE HIGHLIGHTING CLASSES & TOOLTIPS                             */
+/* -------------------------------------------------------------------------- */
+.hw-long-sentence {
+  background-color: rgba(234, 179, 8, 0.28); /* Warm Amber highlight for >25 words */
+  border-radius: 3px;
+  padding: 1px 2px;
+  cursor: help;
+}
+
+.hw-adverb {
+  text-decoration: underline wavy #ef4444; /* Red wavy underline for -ly adverbs */
+  text-decoration-thickness: 1.5px;
+  cursor: help;
+}
+
+.hw-passive-voice {
+  background-color: rgba(168, 85, 247, 0.22); /* Soft violet for passive phrases */
+  border-radius: 3px;
+  padding: 1px 2px;
+  cursor: help;
+}
+
+.hw-complex-word {
+  background-color: rgba(59, 130, 246, 0.24); /* Sky blue for complex words */
+  border-radius: 3px;
+  padding: 1px 2px;
+  cursor: help;
+}
+
+/* Speech Synthesis Active Sentence Glowing Spotlight */
+.speech-active-sentence {
+  background-color: rgba(36, 92, 67, 0.2);
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  transition: background-color 0.3s ease;
+}
+
+/* -------------------------------------------------------------------------- */
+/* RESPONSIVE MEDIA QUERIES                                                   */
+/* -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .room-container {
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: calc(var(--header-height) + 16px);
+  }
+
+  .threshold-question {
+    font-size: 1.6rem;
+  }
+
+  .sculptor-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sculptor-tools-group {
+    justify-content: space-between;
+  }
+
+  .cutting-room-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cutting-card {
+    padding: 16px;
+  }
+}
+

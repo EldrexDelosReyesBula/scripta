@@ -1,0 +1,24 @@
+{
+  "name": "Scripta — Cognitive Writing Space",
+  "short_name": "Scripta",
+  "description": "A local-first cognitive writing environment that separates idea generation, structural organization, and language refinement.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e101c",
+  "theme_color": "#0e101c",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/assets/scripta-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/scripta-logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
