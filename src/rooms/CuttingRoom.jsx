@@ -7,8 +7,12 @@ export function CuttingRoom({
   rawText, 
   cards: initialCards, 
   onUpdateCards, 
-  onProceedSculptor 
+  onProceedToSculptor,
+  onProceedSculptor,
+  onNotify
 }) {
+  const proceedHandler = onProceedToSculptor || onProceedSculptor;
+
   const [cards, setCards] = useState(() => {
     if (initialCards && initialCards.length > 0) return initialCards;
 
@@ -41,14 +45,37 @@ export function CuttingRoom({
 
   const handleTagChange = (id, newTag) => {
     audioEngine.playBlip();
-    setCards(cards.map(c => c.id === id ? { ...c, tag: newTag } : c));
+    setCards(cards.map(c => {
+      if (c.id === id) {
+        const defaultLabel = !c.label ? newTag.charAt(0).toUpperCase() + newTag.slice(1) : c.label;
+        return { ...c, tag: newTag, label: defaultLabel };
+      }
+      return c;
+    }));
+  };
+
+  const handleAutoLabel = () => {
+    audioEngine.playBlip();
+    setCards(cards.map((c, idx) => ({
+      ...c,
+      label: c.label && c.label.trim() ? c.label : (c.tag !== 'unclear' ? c.tag.charAt(0).toUpperCase() + c.tag.slice(1) : `Block #${idx + 1}`)
+    })));
+    onNotify?.("All thought blocks labeled! Sculptor is unlocked.");
+  };
+
+  const handleProceed = () => {
+    if (!allLabeled) {
+      handleAutoLabel();
+    }
+    audioEngine.playSwell();
+    proceedHandler?.();
   };
 
   const handleSplit = (index) => {
     const card = cards[index];
     const words = card.text.split(' ');
     if (words.length < 4) {
-      alert("This block is too short to split further.");
+      onNotify?.("This block is too short to split further.");
       return;
     }
 
@@ -122,8 +149,8 @@ export function CuttingRoom({
     >
       <div className="cutting-room-toolbar">
         <div>
-          <span className="room-step-badge">Step 3 of 4</span>
-          <h2 className="room-heading">The Cutting Room</h2>
+          <span className="room-step-badge">Step 3 of 4 · The Cutting Room</span>
+          <h2 className="room-heading">Structural Organization</h2>
           <p className="room-subtext">Label each block to understand its purpose. Drag or use arrows to rearrange.</p>
         </div>
 
@@ -141,9 +168,9 @@ export function CuttingRoom({
           </div>
 
           <button 
-            className={`btn btn-primary ${!allLabeled ? 'btn-disabled' : ''}`}
-            onClick={onProceedSculptor}
-            disabled={!allLabeled}
+            className="btn btn-primary"
+            onClick={handleProceed}
+            title={allLabeled ? "Proceed to The Sculptor" : "Auto-label remaining and proceed to Sculptor"}
           >
             <span>Proceed to Sculptor</span>
             <ArrowRight size={16} />
