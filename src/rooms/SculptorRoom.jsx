@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, Sparkles, CheckCircle2, Feather, Copy, Check } from 'lucide-react';
+import { Volume2, CheckCircle2, Feather, Copy, Check, Archive, RotateCcw, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { COMPLEX_WORDS } from '../data/complexWords.js';
 import { audioEngine } from '../audio/audioEngine.js';
 
 export function SculptorRoom({ 
   cards, 
   finalText: savedFinalText, 
+  graveyard: initialGraveyard = [],
   onUpdateFinalText, 
+  onUpdateGraveyard,
   onFinalize,
   onRecordToolUsage,
   onNotify
@@ -20,43 +22,107 @@ export function SculptorRoom({
     }));
   });
 
+  const [graveyard, setGraveyard] = useState(initialGraveyard);
+  const [isGraveyardOpen, setIsGraveyardOpen] = useState(false);
   const [isHemingway, setIsHemingway] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechRate, setSpeechRate] = useState(1.0);
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(-1);
   const [tooltip, setTooltip] = useState(null);
   const [copied, setCopied] = useState(false);
+
   const editorRef = useRef(null);
   const speechSynthRef = useRef(window.speechSynthesis || null);
   const sentencesRef = useRef([]);
 
   // Compute full continuous text
-  const fullText = paragraphs.map(p => p.text).join('\n\n');
-
-  useEffect(() => {
-    onUpdateFinalText(fullText);
+  const fullText = useMemo(() => {
+    return paragraphs.map(p => p.text).join('\n\n');
   }, [paragraphs]);
 
-  // Statistics calculation
-  const words = fullText.trim() ? fullText.trim().split(/\s+/).filter(w => w.length > 0) : [];
-  const sentences = fullText.match(/[^.!?\n]+[.!?\n]+/g) || [];
-  const wordCount = words.length;
-  const sentenceCount = sentences.length || 1;
-  const avgSentenceLength = Math.round(wordCount / sentenceCount);
-  const readingTimeMins = Math.max(1, Math.ceil(wordCount / 200));
-  const adverbs = words.filter(w => w.toLowerCase().endsWith('ly'));
-  const adverbDensity = wordCount > 0 ? ((adverbs.length / wordCount) * 100).toFixed(1) : 0;
+  useEffect(() => {
+    onUpdateFinalText?.(fullText);
+  }, [fullText, onUpdateFinalText]);
 
-  const stats = {
-    wordCount,
-    sentenceCount,
-    avgSentenceLength,
-    readingTimeMins,
-    adverbDensity
+  useEffect(() => {
+    onUpdateGraveyard?.(graveyard);
+  }, [graveyard, onUpdateGraveyard]);
+
+  // Clean up speech on unmount
+  useEffect(() => {
+    return () => {
+      if (speechSynthRef.current) {
+        speechSynthRef.current.cancel();
+      }
+    };
+  }, []);
+
+  // Memoized statistics calculation
+  const stats = useMemo(() => {
+    const words = fullText.trim() ? fullText.trim().split(/\s+/).filter(w => w.length > 0) : [];
+    const sentences = fullText.match(/[^.!?\n]+[.!?\n]+/g) || [];
+    const wordCount = words.length;
+    const sentenceCount = sentences.length || 1;
+    const avgSentenceLength = Math.round(wordCount / sentenceCount);
+    const readingTimeMins = Math.max(1, Math.ceil(wordCount / 200));
+    const adverbs = words.filter(w => w.toLowerCase().endsWith('ly'));
+    const adverbDensity = wordCount > 0 ? ((adverbs.length / wordCount) * 100).toFixed(1) : 0;
+
+    return {
+      wordCount,
+      sentenceCount,
+      avgSentenceLength,
+      readingTimeMins,
+      adverbDensity
+    };
+  }, [fullText]);
+
+  // Track edits and capture cuts into The Graveyard
+  const handleParagraphChange = (id, newText) => {
+    const targetPara = paragraphs.find(p => p.id === id);
+    if (!targetPara) return;
+
+    const oldText = targetPara.text.trim();
+    const cleanNew = newText.trim();
+
+    // If significant content was deleted, send to The Graveyard
+    if (oldText.length > cleanNew.length + 8 && oldText !== cleanNew) {
+      const cutSnippet = oldText.length > 120 && cleanNew.length > 0 
+        ? `"...${oldText.slice(cleanNew.length).trim()}"`
+        : oldText;
+
+      const newGraveItem = {
+        id: `grave-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        text: cutSnippet,
+        blockLabel: targetPara.label,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setGraveyard(prev => [newGraveItem, ...prev.slice(0, 49)]);
+      onNotify?.("Sent to Graveyard", "Deleted text safely preserved in the bottom drawer.");
+    }
+
+    setParagraphs(prev => prev.map(p => p.id === id ? { ...p, text: newText } : p));
   };
 
-  const handleParagraphChange = (id, newText) => {
-    setParagraphs(paragraphs.map(p => p.id === id ? { ...p, text: newText } : p));
+  // Restore snippet from The Graveyard into active manuscript
+  const handleRestoreSnippet = (snippetText) => {
+    audioEngine.playClick();
+    if (paragraphs.length === 0) return;
+    
+    // Append restored text to the last paragraph or active block
+    setParagraphs(prev => {
+      const updated = [...prev];
+      const lastIdx = updated.length - 1;
+      const cleanSnippet = snippetText.replace(/^"\.\.\.|\"$/g, '');
+      updated[lastIdx] = {
+        ...updated[lastIdx],
+        text: updated[lastIdx].text + '\n' + cleanSnippet
+      };
+      return updated;
+    });
+
+    onNotify?.("Restored from Graveyard", "Snippet appended back to manuscript.");
   };
 
   const copyToClipboard = () => {
@@ -139,7 +205,16 @@ export function SculptorRoom({
     if (tooltip) setTooltip(null);
   };
 
-  const renderHemingwaySentence = (sentence) => {
+  const showHemingwayTooltip = (e, text) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({
+      text,
+      x: Math.max(10, rect.left + window.scrollX + (rect.width / 2) - 140),
+      y: rect.top + window.scrollY - 42
+    });
+  };
+
+  const renderHemingwaySentence = useCallback((sentence) => {
     const rawWords = sentence.trim().split(/\s+/).filter(w => w.length > 0);
     const isLong = rawWords.length > 25;
 
@@ -156,6 +231,7 @@ export function SculptorRoom({
             className="hw-adverb"
             onMouseEnter={(e) => showHemingwayTooltip(e, "Adverb: Weakens verbs. Try replacing with a precise action verb.")}
             onMouseLeave={() => setTooltip(null)}
+            onClick={(e) => showHemingwayTooltip(e, "Adverb: Weakens verbs. Try replacing with a precise action verb.")}
           >
             {token}
           </span>
@@ -170,6 +246,7 @@ export function SculptorRoom({
             className="hw-complex-word"
             onMouseEnter={(e) => showHemingwayTooltip(e, `Complex Word: "${clean}" — Consider a simpler alternative.`)}
             onMouseLeave={() => setTooltip(null)}
+            onClick={(e) => showHemingwayTooltip(e, `Complex Word: "${clean}" — Consider a simpler alternative.`)}
           >
             {token}
           </span>
@@ -185,6 +262,7 @@ export function SculptorRoom({
           className="hw-long-sentence"
           onMouseEnter={(e) => showHemingwayTooltip(e, `Long Sentence (${rawWords.length} words): Consider splitting to sharpen cadence.`)}
           onMouseLeave={() => setTooltip(null)}
+          onClick={(e) => showHemingwayTooltip(e, `Long Sentence (${rawWords.length} words): Consider splitting to sharpen cadence.`)}
         >
           {renderedTokens}
         </span>
@@ -192,16 +270,7 @@ export function SculptorRoom({
     }
 
     return renderedTokens;
-  };
-
-  const showHemingwayTooltip = (e, text) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({
-      text,
-      x: Math.max(10, rect.left + window.scrollX + (rect.width / 2) - 140),
-      y: rect.top + window.scrollY - 42
-    });
-  };
+  }, []);
 
   return (
     <motion.section 
@@ -296,6 +365,79 @@ export function SculptorRoom({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* The Graveyard Drawer */}
+      <div className={`graveyard-drawer ${isGraveyardOpen ? 'open' : ''}`}>
+        <div 
+          className="graveyard-drawer-header" 
+          onClick={() => {
+            audioEngine.playBlip();
+            setIsGraveyardOpen(!isGraveyardOpen);
+          }}
+        >
+          <div className="graveyard-header-title">
+            <Archive size={16} className="graveyard-icon" />
+            <span>The Graveyard</span>
+            <span className="graveyard-counter-pill">{graveyard.length} cut{graveyard.length === 1 ? '' : 's'}</span>
+          </div>
+          <button className="graveyard-toggle-btn" type="button">
+            {isGraveyardOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+          </button>
+        </div>
+
+        <AnimatePresence>
+          {isGraveyardOpen && (
+            <motion.div 
+              className="graveyard-drawer-content"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              {graveyard.length === 0 ? (
+                <div className="graveyard-empty-state">
+                  <p>Your Graveyard is empty.</p>
+                  <span>Deleted text from refining will rest here so you can cut fearlessly.</span>
+                </div>
+              ) : (
+                <div className="graveyard-list">
+                  {graveyard.map((item) => (
+                    <div key={item.id} className="graveyard-item">
+                      <div className="graveyard-item-meta">
+                        <span className="graveyard-block-tag">{item.blockLabel || 'Cut passage'}</span>
+                        <span className="graveyard-time">{item.timestamp}</span>
+                      </div>
+                      <div className="graveyard-item-text">{item.text}</div>
+                      <div className="graveyard-item-actions">
+                        <button 
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleRestoreSnippet(item.text)}
+                          title="Restore this passage to the manuscript"
+                        >
+                          <RotateCcw size={12} />
+                          <span>Restore</span>
+                        </button>
+                        <button 
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            audioEngine.playBlip();
+                            navigator.clipboard.writeText(item.text);
+                            onNotify?.("Copied Cut Passage", "Snippet copied to clipboard.");
+                          }}
+                          title="Copy snippet"
+                        >
+                          <Copy size={12} />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Interactive Hemingway Tooltip */}

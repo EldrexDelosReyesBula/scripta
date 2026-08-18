@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 
 /**
  * AtmosphericSky - Lightweight 60fps Procedural Weather & Sky Engine
- * Supports: Auto Time-of-Day, Starry Night, Gentle Rain, Thunderstorm, Winter Snowfall
+ * Supports: Auto Time-of-Day, Starry Night, Gentle Rain, Thunderstorm, Winter Snowfall,
+ * Flying Birds flock, and Silhouette Forest Trees along rolling hills.
  */
 export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
   const canvasRef = useRef(null);
@@ -21,7 +22,7 @@ export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
       if (!canvas) return;
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
-      initParticles();
+      initScene();
     };
     window.addEventListener('resize', handleResize);
 
@@ -38,10 +39,17 @@ export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
     let stars = [];
     let rainDrops = [];
     let snowflakes = [];
+    let birds = [];
+    let trees = [];
+    let grassBlades = [];
     let lightning = { active: false, opacity: 0, timer: 0, nextStrike: 180 + Math.random() * 240 };
 
-    const initParticles = () => {
-      // 1. Uniformly Scattered Starfield (Full width 0% - 100%, height 0% - 85%)
+    const getHillY = (x, h) => {
+      return h - 38 + Math.sin(x * 0.003 + 1.2) * 14 + Math.sin(x * 0.007) * 7;
+    };
+
+    const initScene = () => {
+      // 1. Uniformly Scattered Starfield
       stars = [];
       const starCount = effectiveTheme === 'stars' || effectiveTheme === 'dawn' || effectiveTheme === 'dusk' ? 120 : 40;
       for (let i = 0; i < starCount; i++) {
@@ -83,23 +91,54 @@ export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
           phase: Math.random() * Math.PI * 2
         });
       }
+
+      // 4. Soaring Birds
+      birds = [];
+      const birdCount = 6;
+      for (let i = 0; i < birdCount; i++) {
+        birds.push({
+          x: (width / birdCount) * i + Math.random() * 120,
+          y: height * 0.18 + Math.random() * (height * 0.35),
+          speed: 1.2 + Math.random() * 0.9,
+          wingSpan: 10 + Math.random() * 6,
+          flapSpeed: 0.12 + Math.random() * 0.06,
+          phase: Math.random() * Math.PI * 2,
+          bobRange: 1.8 + Math.random() * 2.2
+        });
+      }
+
+      // 5. Procedural Silhouette Trees along the Horizon
+      trees = [];
+      const treeSpacing = 75;
+      const treeCount = Math.ceil(width / treeSpacing) + 2;
+      for (let i = 0; i < treeCount; i++) {
+        const treeX = i * treeSpacing + (Math.random() - 0.5) * 30;
+        const treeType = Math.random() > 0.4 ? 'pine' : 'deciduous';
+        trees.push({
+          x: treeX,
+          height: 38 + Math.random() * 32,
+          type: treeType,
+          swayPhase: Math.random() * Math.PI * 2,
+          layers: 3 + Math.floor(Math.random() * 2)
+        });
+      }
+
+      // 6. Grass Blade Geometry
+      grassBlades = [];
+      const bladeSpacing = 12;
+      const totalBlades = Math.ceil(width / bladeSpacing) + 4;
+      for (let i = 0; i < totalBlades; i++) {
+        grassBlades.push({
+          x: i * bladeSpacing,
+          height: 40 + Math.sin(i * 0.3) * 16 + Math.random() * 12,
+          lean: (Math.random() - 0.5) * 10,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.02 + Math.random() * 0.015
+        });
+      }
     };
 
-    initParticles();
-
-    // Grass Blade Geometry
-    const grassBlades = [];
-    const bladeSpacing = 12;
-    const totalBlades = Math.ceil(width / bladeSpacing) + 4;
-    for (let i = 0; i < totalBlades; i++) {
-      grassBlades.push({
-        x: i * bladeSpacing,
-        height: 40 + Math.sin(i * 0.3) * 16 + Math.random() * 12,
-        lean: (Math.random() - 0.5) * 10,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.02 + Math.random() * 0.015
-      });
-    }
+    initScene();
 
     let time = 0;
 
@@ -164,7 +203,7 @@ export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
         }
       }
 
-      // 3. Render Uniformly Scattered Stars
+      // 3. Render Stars
       if (effectiveTheme !== 'rain' && effectiveTheme !== 'thunder') {
         for (let s of stars) {
           s.x += s.driftX;
@@ -179,24 +218,50 @@ export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
 
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-          ctx.fillStyle = effectiveTheme === 'dawn' || effectiveTheme === 'dusk'
-            ? `rgba(255, 225, 190, ${currentAlpha * 0.75})`
-            : `rgba(225, 238, 255, ${currentAlpha * 0.85})`;
+          ctx.fillStyle = `rgba(240, 246, 255, ${currentAlpha})`;
           ctx.fill();
         }
       }
 
-      // 4. Render Rain / Thunder Storm Raindrops
+      // 4. Render Soaring Birds
+      if (effectiveTheme !== 'thunder') {
+        ctx.strokeStyle = 'rgba(10, 12, 22, 0.72)';
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        for (let b of birds) {
+          b.x += b.speed;
+          if (b.x > width + 40) {
+            b.x = -40;
+            b.y = height * 0.15 + Math.random() * (height * 0.38);
+          }
+
+          const curY = b.y + Math.sin(time * 1.5 + b.phase) * b.bobRange;
+          const wingFlap = Math.sin(time * b.flapSpeed * 40 + b.phase);
+          const wingHeight = wingFlap * (b.wingSpan * 0.45);
+
+          ctx.beginPath();
+          // Left Wing
+          ctx.moveTo(b.x - b.wingSpan, curY - wingHeight);
+          ctx.quadraticCurveTo(b.x - b.wingSpan * 0.4, curY + (wingHeight > 0 ? -2 : 2), b.x, curY);
+          // Right Wing
+          ctx.quadraticCurveTo(b.x + b.wingSpan * 0.4, curY + (wingHeight > 0 ? -2 : 2), b.x + b.wingSpan, curY - wingHeight);
+          ctx.stroke();
+        }
+      }
+
+      // 5. Render Rain Droplets
       if (effectiveTheme === 'rain' || effectiveTheme === 'thunder') {
-        ctx.strokeStyle = 'rgba(180, 210, 240, 0.45)';
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = 'rgba(180, 215, 255, 0.4)';
+        ctx.lineWidth = 1.3;
         ctx.beginPath();
         for (let r of rainDrops) {
           r.y += r.speed;
-          r.x -= 2.5; // Gentle wind angle
+          r.x -= 3;
           if (r.y > height) {
             r.y = -20;
-            r.x = Math.random() * (width + 100);
+            r.x = Math.random() * width + 40;
           }
           ctx.moveTo(r.x, r.y);
           ctx.lineTo(r.x - 4, r.y + r.length);
@@ -204,7 +269,7 @@ export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
         ctx.stroke();
       }
 
-      // 5. Render Floating Snowflakes
+      // 6. Render Floating Snowflakes
       if (effectiveTheme === 'snow') {
         ctx.fillStyle = 'rgba(240, 246, 255, 0.8)';
         for (let sf of snowflakes) {
@@ -220,35 +285,75 @@ export function AtmosphericSky({ enabled = true, weather = 'auto' }) {
         }
       }
 
-      // 6. Gentle Rolling Hill Silhouette
+      // 7. Render Procedural Horizon Silhouette Trees
+      ctx.fillStyle = 'rgba(7, 9, 18, 0.92)';
+      for (let t of trees) {
+        const treeBaseY = getHillY(t.x, height) + 4;
+        const treeSway = Math.sin(time * 0.8 + t.swayPhase) * 2;
+
+        if (t.type === 'pine') {
+          // Pine Tree: Tiered Triangles + Trunk
+          const trunkW = 4;
+          const trunkH = t.height * 0.25;
+          ctx.fillRect(t.x - trunkW / 2, treeBaseY - trunkH, trunkW, trunkH);
+
+          const tierH = (t.height - trunkH) / t.layers;
+          for (let l = 0; l < t.layers; l++) {
+            const bottomY = treeBaseY - trunkH - (l * tierH * 0.75);
+            const topY = bottomY - tierH * 1.25;
+            const halfW = (t.height * 0.32) * (1 - (l * 0.22));
+
+            ctx.beginPath();
+            ctx.moveTo(t.x - halfW, bottomY);
+            ctx.lineTo(t.x + halfW, bottomY);
+            ctx.lineTo(t.x + (treeSway * (l + 1) * 0.3), topY);
+            ctx.closePath();
+            ctx.fill();
+          }
+        } else {
+          // Deciduous Tree: Trunk + Rounded Canopy
+          const trunkW = 5;
+          const trunkH = t.height * 0.4;
+          ctx.fillRect(t.x - trunkW / 2, treeBaseY - trunkH, trunkW, trunkH);
+
+          const canopyRadius = t.height * 0.42;
+          const canopyY = treeBaseY - trunkH - canopyRadius * 0.6;
+          ctx.beginPath();
+          ctx.arc(t.x + treeSway, canopyY, canopyRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 8. Gentle Rolling Hill Silhouette
       ctx.beginPath();
       ctx.moveTo(0, height);
-      for (let x = 0; x <= width; x += 20) {
-        const hillY = height - 38 + Math.sin(x * 0.003 + 1.2) * 14 + Math.sin(x * 0.007) * 7;
-        ctx.lineTo(x, hillY);
+      for (let x = 0; x <= width; x += 16) {
+        ctx.lineTo(x, getHillY(x, height));
       }
       ctx.lineTo(width, height);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(6, 8, 16, 0.95)';
+      ctx.fillStyle = 'rgba(6, 8, 16, 0.98)';
       ctx.fill();
 
-      // 7. Swaying Grass Blades in the Breeze
-      ctx.strokeStyle = 'rgba(8, 10, 20, 0.98)';
+      // 9. Swaying Grass Blades in the Breeze
+      ctx.strokeStyle = 'rgba(8, 10, 20, 0.99)';
       ctx.lineWidth = 2.4;
       ctx.lineCap = 'round';
+      ctx.beginPath();
+
+      const windPower = effectiveTheme === 'thunder' ? 2.8 : 1.5;
+      const swayScale = effectiveTheme === 'thunder' ? 18 : 11;
 
       for (let blade of grassBlades) {
-        const windPower = effectiveTheme === 'thunder' ? 2.8 : 1.5;
-        const sway = Math.sin(time * windPower + blade.phase) * (effectiveTheme === 'thunder' ? 18 : 11) + blade.lean;
-        const baseY = height - 10 + Math.sin(blade.x * 0.003 + 1.2) * 14;
+        const sway = Math.sin(time * windPower + blade.phase) * swayScale + blade.lean;
+        const baseY = getHillY(blade.x, height) + 12;
         const tipX = blade.x + sway;
         const tipY = baseY - blade.height;
 
-        ctx.beginPath();
         ctx.moveTo(blade.x, baseY);
         ctx.quadraticCurveTo(blade.x + sway * 0.4, baseY - blade.height * 0.6, tipX, tipY);
-        ctx.stroke();
       }
+      ctx.stroke();
 
       animationFrameId = requestAnimationFrame(render);
     };

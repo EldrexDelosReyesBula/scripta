@@ -22,7 +22,7 @@ export function ShortcutsModal({ isOpen, onClose }) {
   return (
     <AnimatePresence>
       <div className="modal-backdrop" onClick={onClose}>
-        <motion.div 
+        <motion.div
           className="modal-card modal-card-wide modal-bottom-sheet"
           onClick={(e) => e.stopPropagation()}
           initial={{ opacity: 0, y: 30 }}
@@ -34,10 +34,10 @@ export function ShortcutsModal({ isOpen, onClose }) {
           <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div className="modal-icon-header">
               <Command size={22} />
-              <span>Cognitive Flow Keybindings</span>
+              <span>Keyboard Shortcuts</span>
             </div>
-            <button 
-              className="btn btn-icon" 
+            <button
+              className="btn btn-icon"
               onClick={onClose}
               style={{ border: 'none', background: 'transparent' }}
             >

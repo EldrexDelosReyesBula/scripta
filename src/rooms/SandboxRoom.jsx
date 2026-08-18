@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, HelpCircle, Sparkles } from 'lucide-react';
 import { audioEngine } from '../audio/audioEngine.js';
 
 export function SandboxRoom({ 
   rawText, 
   onUpdateText, 
   timerDuration = 900, 
+  targetWordGoal = 500,
   workingQuestion,
   strictSandboxDiscipline = true,
   onLeaveSandbox, 
@@ -17,9 +18,13 @@ export function SandboxRoom({
   });
   const [timeRemaining, setTimeRemaining] = useState(timerDuration);
   const [isPaused, setIsPaused] = useState(false);
+  const [showStuckPrompt, setShowStuckPrompt] = useState(false);
+
   const editorRef = useRef(null);
   const activeLineRef = useRef(null);
+  const mobileInputRef = useRef(null);
   const inactivityRef = useRef(0);
+  const isComposingRef = useRef(false);
 
   // Sync timer duration if settings change
   useEffect(() => {
@@ -50,7 +55,7 @@ export function SandboxRoom({
     return () => clearInterval(timer);
   }, [onNotify]);
 
-  // Inactivity Monitor (12s pulse, 30s dim, 60s chime)
+  // Inactivity Monitor (12s pulse, 30s stuck prompt & dim, 60s chime)
   useEffect(() => {
     const inactivityTimer = setInterval(() => {
       inactivityRef.current += 1;
@@ -59,6 +64,7 @@ export function SandboxRoom({
       }
       if (inactivityRef.current >= 30) {
         document.body.classList.add('sandbox-dimmed');
+        setShowStuckPrompt(true);
       }
       if (inactivityRef.current >= 60) {
         audioEngine.playChime();
@@ -76,6 +82,7 @@ export function SandboxRoom({
   const resetInactivity = () => {
     inactivityRef.current = 0;
     setIsPaused(false);
+    setShowStuckPrompt(false);
     document.body.classList.remove('sandbox-dimmed');
   };
 
@@ -89,7 +96,42 @@ export function SandboxRoom({
     }
   };
 
-  // Keyboard handler for typing & backspace toggle
+  // Focus both container and mobile invisible input
+  const focusEditor = () => {
+    resetInactivity();
+    if (mobileInputRef.current) {
+      mobileInputRef.current.focus({ preventScroll: true });
+    }
+    if (editorRef.current) {
+      editorRef.current.focus({ preventScroll: true });
+    }
+    scrollToActiveLine();
+  };
+
+  // Auto-focus on mount
+  useEffect(() => {
+    focusEditor();
+  }, []);
+
+  // Insert text programmatically (e.g. from "I'm Stuck" prompt)
+  const insertTextAtEnd = (textToInsert) => {
+    resetInactivity();
+    audioEngine.playThock(false);
+    const newLines = [...lines];
+    const lastIdx = newLines.length - 1;
+    newLines[lastIdx] = (newLines[lastIdx] || '') + textToInsert;
+    setLines(newLines);
+    onUpdateText(newLines.join('\n'));
+    setTimeout(focusEditor, 40);
+  };
+
+  // Handle "I'm Stuck" Button Click
+  const handleStuckClick = () => {
+    insertTextAtEnd("The thing I'm trying to say here is ");
+    onNotify?.("Unblocked", "Permission to write badly granted. Just keep moving forward.");
+  };
+
+  // Desktop hardware keyboard handler
   const handleKeyDown = (e) => {
     // If strict discipline is enabled, block backspace/delete & arrows
     if (strictSandboxDiscipline) {
@@ -146,6 +188,90 @@ export function SandboxRoom({
     }
   };
 
+  // Mobile virtual keyboard beforeinput event
+  const handleMobileBeforeInput = (e) => {
+    resetInactivity();
+
+    if (strictSandboxDiscipline) {
+      if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward' || e.inputType === 'deleteByCut') {
+        e.preventDefault();
+        return;
+      }
+    } else {
+      if (e.inputType === 'deleteContentBackward') {
+        e.preventDefault();
+        audioEngine.playThock(false);
+        const newLines = [...lines];
+        const lastIdx = newLines.length - 1;
+        if (newLines[lastIdx].length > 0) {
+          newLines[lastIdx] = newLines[lastIdx].slice(0, -1);
+          setLines(newLines);
+          onUpdateText(newLines.join('\n'));
+        } else if (newLines.length > 1) {
+          newLines.pop();
+          setLines(newLines);
+          onUpdateText(newLines.join('\n'));
+        }
+        return;
+      }
+    }
+
+    if (e.inputType === 'insertLineBreak' || e.inputType === 'insertParagraph') {
+      e.preventDefault();
+      audioEngine.playThock(true);
+      const newLines = [...lines, ''];
+      setLines(newLines);
+      onUpdateText(newLines.join('\n'));
+      setTimeout(scrollToActiveLine, 40);
+      return;
+    }
+
+    if (e.data && !isComposingRef.current) {
+      e.preventDefault();
+      audioEngine.playThock(false);
+      const newLines = [...lines];
+      newLines[newLines.length - 1] += e.data;
+      setLines(newLines);
+      onUpdateText(newLines.join('\n'));
+      setTimeout(scrollToActiveLine, 40);
+    }
+  };
+
+  // Fallback mobile input change handler (for Android IME / composition)
+  const handleMobileInput = (e) => {
+    resetInactivity();
+    const val = e.target.value;
+    if (!val || isComposingRef.current) return;
+
+    audioEngine.playThock(false);
+    const newLines = [...lines];
+    newLines[newLines.length - 1] += val;
+    setLines(newLines);
+    onUpdateText(newLines.join('\n'));
+    
+    // Reset the bridge value so it's fresh for next input
+    e.target.value = '';
+    setTimeout(scrollToActiveLine, 40);
+  };
+
+  const handleCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleCompositionEnd = (e) => {
+    isComposingRef.current = false;
+    const val = e.data || e.target.value;
+    if (val) {
+      audioEngine.playThock(false);
+      const newLines = [...lines];
+      newLines[newLines.length - 1] += val;
+      setLines(newLines);
+      onUpdateText(newLines.join('\n'));
+      if (mobileInputRef.current) mobileInputRef.current.value = '';
+      setTimeout(scrollToActiveLine, 40);
+    }
+  };
+
   const totalLines = lines.length;
   const fullContent = lines.join('\n');
   const wordsCount = fullContent.trim() ? fullContent.trim().split(/\s+/).filter(w => w.length > 0).length : 0;
@@ -166,6 +292,24 @@ export function SandboxRoom({
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
+      {/* Hidden Mobile Virtual Keyboard Input Bridge */}
+      <textarea
+        ref={mobileInputRef}
+        className="sandbox-mobile-hidden-bridge"
+        autoCapitalize="sentences"
+        autoCorrect="on"
+        autoComplete="off"
+        spellCheck="true"
+        inputMode="text"
+        tabIndex={-1}
+        aria-hidden="true"
+        onBeforeInput={handleMobileBeforeInput}
+        onInput={handleMobileInput}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
+        onKeyDown={handleKeyDown}
+      />
+
       <div className="sandbox-header-bar">
         {/* Non-Anxiety Circular Session Timer with MM:SS */}
         <div 
@@ -187,12 +331,15 @@ export function SandboxRoom({
               <span className="timer-label">{minutes}:{seconds}</span>
               <span className="timer-badge">{isPaused ? "Paused" : (strictSandboxDiscipline ? "Strict Flow" : "Free Writing")}</span>
             </div>
-            <span className="timer-sub">{wordsCount} words · {strictSandboxDiscipline ? "No Backspace" : "Backspace Active"}</span>
+            <span className="timer-sub">
+              {wordsCount} / {targetWordGoal} words ({Math.min(100, Math.round((wordsCount / targetWordGoal) * 100))}%) · {strictSandboxDiscipline ? "No Backspace" : "Backspace Active"}
+            </span>
           </div>
         </div>
 
-        <button className="btn btn-secondary" onClick={onLeaveSandbox}>
-          <span>Organize Thoughts (Ctrl+E)</span>
+        <button className="btn btn-secondary sandbox-proceed-btn" onClick={onLeaveSandbox}>
+          <span className="btn-text-desktop">Organize Thoughts (Ctrl+E)</span>
+          <span className="btn-text-mobile">Organize</span>
           <ArrowRight size={16} />
         </button>
       </div>
@@ -211,11 +358,8 @@ export function SandboxRoom({
         className="sandbox-editor"
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        onClick={() => {
-          resetInactivity();
-          scrollToActiveLine();
-        }}
-        autoFocus
+        onClick={focusEditor}
+        onTouchStart={focusEditor}
       >
         {lines.map((lineText, idx) => {
           const isCurrent = idx === totalLines - 1;
@@ -238,6 +382,28 @@ export function SandboxRoom({
           );
         })}
       </div>
+
+      {/* Manifesto "I'm Stuck" helper pill button */}
+      <AnimatePresence>
+        {showStuckPrompt && (
+          <motion.div 
+            className="stuck-prompt-container"
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+          >
+            <button 
+              className="stuck-prompt-btn" 
+              onClick={handleStuckClick}
+              type="button"
+            >
+              <Sparkles size={14} className="stuck-icon" />
+              <span>Stuck? Write the worst version of this sentence.</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 }

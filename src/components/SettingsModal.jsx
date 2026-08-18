@@ -7,7 +7,9 @@ export function SettingsModal({
   isOpen, 
   onClose, 
   settings, 
-  onUpdateSettings 
+  onUpdateSettings,
+  onOpenPrivacy,
+  onOpenTerms
 }) {
   if (!isOpen) return null;
 
@@ -41,6 +43,48 @@ export function SettingsModal({
 
           <div className="modal-body">
             <div className="settings-grid">
+              {/* Goal Text Length Input */}
+              <div className="setting-row">
+                <div className="setting-info">
+                  <label className="setting-title">Goal Text Length (Target Words)</label>
+                  <div className="setting-desc">Set your target writing goal length for drafting sessions</div>
+                </div>
+                <div className="setting-control" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input 
+                      type="number"
+                      min={50}
+                      max={50000}
+                      step={50}
+                      className="input-text"
+                      style={{ width: 110, textAlign: 'right', padding: '6px 10px', fontFamily: 'var(--font-sandbox)', fontSize: '0.9rem' }}
+                      value={settings.targetWordGoal || 500}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10) || 500;
+                        onUpdateSettings({ targetWordGoal: val });
+                      }}
+                    />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>words</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 5 }}>
+                    {[250, 500, 1000, 2000].map((preset) => (
+                      <button 
+                        key={preset}
+                        type="button"
+                        className={`btn btn-secondary btn-sm ${(settings.targetWordGoal || 500) === preset ? 'active' : ''}`}
+                        style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                        onClick={() => {
+                          audioEngine.playBlip();
+                          onUpdateSettings({ targetWordGoal: preset });
+                        }}
+                      >
+                        {preset}w
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Session Target Duration */}
               <div className="setting-row">
                 <div className="setting-info">
@@ -187,6 +231,30 @@ export function SettingsModal({
                 </div>
               </div>
 
+              {/* Live Text Counter Display Mode */}
+              <div className="setting-row">
+                <div className="setting-info">
+                  <label className="setting-title">Text Counter Metric</label>
+                  <div className="setting-desc">Preferred live counter displayed in the header and status bar</div>
+                </div>
+                <div className="setting-control">
+                  <select 
+                    className="input-select"
+                    value={settings.counterMode || 'words'}
+                    onChange={(e) => {
+                      onUpdateSettings({ counterMode: e.target.value });
+                      audioEngine.playBlip();
+                    }}
+                  >
+                    <option value="words">Word Count (e.g., 250 words)</option>
+                    <option value="readingTime">Reading Time (e.g., 2 min read)</option>
+                    <option value="characters">Character Count (e.g., 1,450 chars)</option>
+                    <option value="detailed">Detailed (Words & Reading Time)</option>
+                    <option value="off">Off (Distraction-Free)</option>
+                  </select>
+                </div>
+              </div>
+
               {/* Dyslexia-friendly Font Toggle */}
               <div className="setting-row">
                 <div className="setting-info">
@@ -231,7 +299,26 @@ export function SettingsModal({
             </div>
           </div>
 
-          <div className="modal-footer">
+          <div className="modal-footer" style={{ flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              <button 
+                type="button" 
+                className="link-button" 
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => { onClose(); onOpenPrivacy?.(); }}
+              >
+                Privacy Policy
+              </button>
+              <span>·</span>
+              <button 
+                type="button" 
+                className="link-button" 
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => { onClose(); onOpenTerms?.(); }}
+              >
+                Terms of Use
+              </button>
+            </div>
             <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={onClose}>
               Done
             </button>

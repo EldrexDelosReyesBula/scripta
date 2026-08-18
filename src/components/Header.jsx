@@ -6,10 +6,12 @@ import {
   FolderOpen, 
   Save, 
   Settings, 
-  HelpCircle,
-  Menu,
-  X,
-  ArrowRight
+  HelpCircle, 
+  Menu, 
+  X, 
+  ArrowRight,
+  Clock,
+  FileText
 } from 'lucide-react';
 import { 
   IconScriptaPen, 
@@ -22,15 +24,18 @@ import { audioEngine } from '../audio/audioEngine.js';
 export function Header({ 
   currentRoom, 
   onSwitchRoom, 
+  onOpenLanding,
   workingQuestion, 
   soundEnabled, 
   onToggleSound, 
   onOpenProject, 
   onSaveProject, 
   onOpenSettings, 
-  onOpenShortcuts,
+  onOpenShortcuts, 
   unlockedRooms,
-  wordCount
+  metrics = { wordCount: 0, charCount: 0, readingTimeMins: 1 },
+  counterMode = 'words',
+  onCycleCounterMode
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -50,35 +55,68 @@ export function Header({
     }
   };
 
+  const renderCounterLabel = () => {
+    if (counterMode === 'readingTime') {
+      return (
+        <>
+          <Clock size={13} className="counter-icon" />
+          <span>{metrics.readingTimeMins} min read</span>
+        </>
+      );
+    }
+    if (counterMode === 'characters') {
+      return (
+        <>
+          <FileText size={13} className="counter-icon" />
+          <span>{metrics.charCount.toLocaleString()} chars</span>
+        </>
+      );
+    }
+    if (counterMode === 'detailed') {
+      return (
+        <>
+          <span>{metrics.wordCount.toLocaleString()} words · {metrics.readingTimeMins}m read</span>
+        </>
+      );
+    }
+    // Default words
+    return (
+      <>
+        <span>{metrics.wordCount.toLocaleString()} words</span>
+      </>
+    );
+  };
+
   return (
     <>
       <header className="scripta-header">
         <div className="brand-container">
           <div 
             className="brand-title" 
-            onClick={() => handleRoomSelect('threshold')}
-            title="Scripta Workspace — Return to Threshold"
+            onClick={() => onOpenLanding ? onOpenLanding() : handleRoomSelect('threshold')}
+            title="Scripta — Home & Manifesto"
           >
             <img 
               src="/assets/scripta-logo.svg" 
               alt="Scripta Logo" 
-              className="brand-logo-img"
+              className="brand-logo-img" 
             />
             <span>Scripta</span>
           </div>
         </div>
 
-        {/* Mobile Active Room Pill */}
-        <div 
-          className="mobile-active-room-pill mobile-only"
-          onClick={() => setIsMobileMenuOpen(true)}
-        >
-          <span>{getRoomName(currentRoom)}</span>
-        </div>
-
         {/* Desktop Room Navigation & Actions */}
         <div className="header-actions desktop-only">
           <nav className="room-indicators" aria-label="Room Navigation">
+            <button 
+              className={`room-tab ${currentRoom === 'threshold' ? 'active' : ''}`}
+              onClick={() => handleRoomSelect('threshold')}
+              title="The Threshold (Inquiry)"
+            >
+              <IconScriptaCompass size={14} />
+              <span>Threshold</span>
+            </button>
+
             <button 
               className={`room-tab ${currentRoom === 'sandbox' ? 'active' : ''}`}
               onClick={() => handleRoomSelect('sandbox')}
@@ -89,9 +127,8 @@ export function Header({
             </button>
 
             <button 
-              className={`room-tab ${currentRoom === 'cutting' ? 'active' : ''} ${!unlockedRooms.cutting ? 'disabled' : ''}`}
-              onClick={() => unlockedRooms.cutting && handleRoomSelect('cutting')}
-              disabled={!unlockedRooms.cutting}
+              className={`room-tab ${currentRoom === 'cutting' ? 'active' : ''}`}
+              onClick={() => handleRoomSelect('cutting')}
               title="Organization Room (Alt+2)"
             >
               <IconScriptaGrid size={14} />
@@ -99,9 +136,8 @@ export function Header({
             </button>
 
             <button 
-              className={`room-tab ${currentRoom === 'sculptor' ? 'active' : ''} ${!unlockedRooms.sculptor ? 'disabled' : ''}`}
-              onClick={() => unlockedRooms.sculptor && handleRoomSelect('sculptor')}
-              disabled={!unlockedRooms.sculptor}
+              className={`room-tab ${currentRoom === 'sculptor' ? 'active' : ''}`}
+              onClick={() => handleRoomSelect('sculptor')}
               title="Refinement Room (Alt+3)"
             >
               <IconScriptaChisel size={14} />
@@ -178,14 +214,20 @@ export function Header({
       {/* Mobile Slide-Out Drawer Panel */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <div className="mobile-drawer-backdrop" onClick={() => setIsMobileMenuOpen(false)}>
+          <>
             <motion.div 
-              className="mobile-drawer-panel"
-              onClick={(e) => e.stopPropagation()}
-              initial={{ x: '100%', opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: '100%', opacity: 0 }}
-              transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+              className="mobile-drawer-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <motion.aside 
+              className="mobile-drawer"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 300 }}
             >
               <div className="mobile-drawer-header">
                 <div className="brand-title">
@@ -205,6 +247,22 @@ export function Header({
                 <div className="mobile-drawer-question">
                   <span className="mobile-drawer-question-label">Active Inquiry</span>
                   <div className="mobile-drawer-question-text">"{workingQuestion}"</div>
+                </div>
+              )}
+
+              {/* Mobile Text Counter */}
+              {counterMode !== 'off' && currentRoom !== 'threshold' && (
+                <div 
+                  className="mobile-drawer-counter-row"
+                  onClick={() => {
+                    audioEngine.playBlip();
+                    onCycleCounterMode?.();
+                  }}
+                >
+                  <span className="counter-row-label">Manuscript Metrics</span>
+                  <div className="mobile-counter-pill">
+                    {renderCounterLabel()}
+                  </div>
                 </div>
               )}
 
@@ -237,9 +295,8 @@ export function Header({
                   </button>
 
                   <button 
-                    className={`mobile-nav-item ${currentRoom === 'cutting' ? 'active' : ''} ${!unlockedRooms.cutting ? 'disabled' : ''}`}
-                    onClick={() => unlockedRooms.cutting && handleRoomSelect('cutting')}
-                    disabled={!unlockedRooms.cutting}
+                    className={`mobile-nav-item ${currentRoom === 'cutting' ? 'active' : ''}`}
+                    onClick={() => handleRoomSelect('cutting')}
                   >
                     <div className="mobile-nav-icon"><IconScriptaGrid size={18} /></div>
                     <div className="mobile-nav-info">
@@ -250,9 +307,8 @@ export function Header({
                   </button>
 
                   <button 
-                    className={`mobile-nav-item ${currentRoom === 'sculptor' ? 'active' : ''} ${!unlockedRooms.sculptor ? 'disabled' : ''}`}
-                    onClick={() => unlockedRooms.sculptor && handleRoomSelect('sculptor')}
-                    disabled={!unlockedRooms.sculptor}
+                    className={`mobile-nav-item ${currentRoom === 'sculptor' ? 'active' : ''}`}
+                    onClick={() => handleRoomSelect('sculptor')}
                   >
                     <div className="mobile-nav-icon"><IconScriptaChisel size={18} /></div>
                     <div className="mobile-nav-info">
@@ -324,12 +380,10 @@ export function Header({
                   </button>
                 </div>
               </div>
-            </motion.div>
-          </div>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
     </>
   );
 }
-
-

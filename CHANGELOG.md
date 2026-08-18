@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-08-18
+
+### Added
+- **Editorial Landing Page & Living Nature Sky**:
+  - Distraction-free editorial landing page introducing Scripta's core philosophy and 4-room cognitive workflow.
+  - Procedural atmospheric sky hero with live time-of-day transitions (*Dawn*, *Day*, *Dusk*, *Midnight*), silhouette horizon trees, and soaring birds with realistic wing-flap physics.
+  - Interactive FAQ accordion built using `@eldrex/cairn`.
+- **Dedicated Standalone Legal Suite**:
+  - Full-page **Privacy Policy** detailing 100% local browser storage, zero server communication, client-side Blob compilations, and zero third-party telemetry.
+  - Full-page **Terms of Use** asserting 100% unconditional author copyright sovereignty and commercial publishing rights.
+  - Creator attribution to **Eldrex Delos Reyes Bula** (`eldrexdelosreyesbula@gmail.com`) and deployment domain `https://escripta.vercel.app`.
+- **`@eldrex/cairn` UI Framework & Reactive Signals Integration**:
+  - Integrated `@eldrex/cairn` universal framework bridges (`cairnToReact`) and UI primitives (`UI.Accordion`, `UI.Badge`).
+  - Implemented high-performance reactive cadence engine (`CairnTypingVelocity.jsx`) tracking typing WPM and flow score with zero React component tree re-rendering overhead.
+- **Global Error Boundary Protection**:
+  - Added `<ErrorBoundary>` wrapping `<App />` to protect against runtime exceptions and provide instant 1-click desk recovery.
+- **Multi-Format Export Suite in Save Ritual**:
+  - Universal export options for Microsoft Word (`.docx`), Adobe PDF (`.pdf`), Markdown (`.md`), Plain Text (`.txt`), HTML (`.html`), and `.scripta` JSON format.
+- **Custom Goal Text Length & Metric Modes**:
+  - Numeric word count goal input with quick presets (`250w`, `500w`, `1000w`, `2000w`) and live progress percentage tracking.
+  - Multi-mode counter switcher (*Words*, *Reading Time*, *Character Count*, *Detailed*).
+- **Comprehensive SEO & Web Metadata**:
+  - Added Canonical URL `https://escripta.vercel.app/`, Open Graph tags, Twitter Cards, and Schema.org JSON-LD structured data.
+- **Mobile UX Hardening**:
+  - Instant drafting skip action in The Threshold.
+  - Unlocked direct room switching across all stages in top header and mobile drawer.
+
+---
+
 ## [1.0.0] - 2026-08-18
 
 ### Added

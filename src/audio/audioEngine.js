@@ -53,6 +53,10 @@ class AudioEngine {
     this.soundProfile = profile || 'typewriter';
   }
 
+  setProfile(profile) {
+    this.setSoundProfile(profile);
+  }
+
   getSoundProfile() {
     return this.soundProfile;
   }

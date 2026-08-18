@@ -8,6 +8,7 @@ const AUTO_RECOVERY_KEY = 'scripta_auto_recovery';
 export class StorageEngine {
   constructor() {
     this.fileHandle = null;
+    this.debounceTimer = null;
   }
 
   serializeState(appState) {
@@ -17,7 +18,8 @@ export class StorageEngine {
         created: appState.metadata?.created || new Date().toISOString(),
         modified: new Date().toISOString(),
         futureNote: appState.metadata?.futureNote || '',
-        workingQuestion: appState.workingQuestion || ''
+        workingQuestion: appState.workingQuestion || '',
+        totalTimeSpentSec: appState.metadata?.totalTimeSpentSec || 0
       },
       sandbox: {
         rawText: appState.sandbox?.rawText || '',
@@ -32,6 +34,7 @@ export class StorageEngine {
         hemingwayUsed: appState.sculptor?.hemingwayUsed || false,
         readAloudUsed: appState.sculptor?.readAloudUsed || false
       },
+      graveyard: appState.graveyard || [],
       settings: appState.settings || {
         fontSize: 18,
         soundEnabled: true,
@@ -44,12 +47,33 @@ export class StorageEngine {
   }
 
   saveAutoRecovery(appState) {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+    this.debounceTimer = setTimeout(() => {
+      try {
+        const data = this.serializeState(appState);
+        localStorage.setItem(AUTO_RECOVERY_KEY, data);
+      } catch (err) {
+        console.warn('LocalStorage save failed:', err);
+      }
+    }, 1200);
+  }
+
+  saveAutoRecoveryImmediate(appState) {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
     try {
       const data = this.serializeState(appState);
       localStorage.setItem(AUTO_RECOVERY_KEY, data);
     } catch (err) {
       console.warn('LocalStorage save failed:', err);
     }
+  }
+
+  saveDraft(appState) {
+    this.saveAutoRecovery(appState);
   }
 
   getAutoRecovery() {
@@ -59,6 +83,10 @@ export class StorageEngine {
     } catch (err) {
       return null;
     }
+  }
+
+  recoverDraft() {
+    return this.getAutoRecovery();
   }
 
   clearAutoRecovery() {
